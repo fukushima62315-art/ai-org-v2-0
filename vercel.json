@@ -8,20 +8,8 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "src/api/app.py"
-    },
-    {
-      "src": "/health",
-      "dest": "src/api/app.py"
-    },
-    {
-      "src": "/openapi.json",
-      "dest": "src/api/app.py"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "src/api/app.py"
     }
   ],
   "headers": [
