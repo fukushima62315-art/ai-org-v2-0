@@ -1,0 +1,14 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "escalations": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "budget_alerts": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

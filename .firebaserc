@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "ai-org-v2-prod",
+    "production": "ai-org-v2-prod",
+    "staging": "ai-org-v2-prod-staging"
+  }
+}
