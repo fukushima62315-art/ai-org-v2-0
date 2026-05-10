@@ -24,13 +24,6 @@
       "dest": "/index.html"
     }
   ],
-  "env": {
-    "ANTHROPIC_API_KEY": "@ANTHROPIC_API_KEY",
-    "FIREBASE_DB_URL": "@FIREBASE_DB_URL",
-    "FIREBASE_AUTH_TOKEN": "@FIREBASE_AUTH_TOKEN",
-    "LINE_CHANNEL_ACCESS_TOKEN": "@LINE_CHANNEL_ACCESS_TOKEN",
-    "LINE_USER_ID": "@LINE_USER_ID"
-  },
   "headers": [
     {
       "source": "/api/(.*)",
