@@ -88,6 +88,26 @@ MOCK_REPLIES = {
 # エンドポイント
 # ============================================================
 
+@app.get("/")
+def root():
+    return {
+        "message": "AI-Org v2.0 API へようこそ",
+        "version": "2.0",
+        "endpoints": {
+            "/health": "ヘルスチェック",
+            "/agents": "エージェント一覧",
+            "/agents/{agent_id}": "特定エージェント情報",
+            "/chat/{agent_name}": "エージェントとチャット",
+            "/escalations": "エスカレーション管理",
+            "/rar-s": "RAR-S スコア計算",
+            "/metrics": "KPI・予算メトリクス",
+            "/reports/monthly": "月次レポート",
+            "/openapi.json": "API ドキュメント",
+        },
+        "docs_url": "/docs",
+        "redoc_url": "/redoc",
+    }
+
 @app.get("/health")
 def health():
     return {
