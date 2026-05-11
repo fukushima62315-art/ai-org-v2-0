@@ -205,7 +205,8 @@ async def calc_rar_s(req: RarSRequest):
     def score(rm, pm):
         g = req.monthly_revenue_jpy * rm * 36 - req.annual_cost_jpy * 3
         if g <= 0: return 0.0
-        return round(math.log10(g) * min(1.0, req.success_probability * pm) / max(0.1, req.risk_factor), 3)
+        raw = math.log10(g) * min(1.0, req.success_probability * pm) / max(0.1, req.risk_factor)
+        return round(min(1.5, max(0.0, raw)), 3)
     c, n, o = score(0.7, 0.8), score(1.0, 1.0), score(1.3, 1.2)
     return {"opportunity_id": req.opportunity_id, "title": req.title,
             "rar_s_scores": {"conservative": c, "neutral": n, "optimistic": o},
