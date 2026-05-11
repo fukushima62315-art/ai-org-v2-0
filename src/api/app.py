@@ -168,14 +168,21 @@ async def create_escalation(req: EscalationRequest):
     eid = str(uuid.uuid4())[:8].upper()
     esc = {"id": eid, "from_agent": req.from_agent, "context": req.context,
            "level": req.level, "status": "pending",
-           "created_at": datetime.datetime.utcnow().isoformat() + "Z"}
-    _escalations[eid] = esc
+           "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+           "line_notification": "skipped"}
 
     # LINE 通知を送信（失敗してもエスカレーション作成は成功させる）
-    try:
-        line_token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
-        line_user_id = os.environ.get("LINE_USER_ID", "")
-        if line_token and line_user_id:
+    line_token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
+    line_user_id = os.environ.get("LINE_USER_ID", "").strip()
+
+    if not line_token:
+        esc["line_notification"] = "failed: LINE_CHANNEL_ACCESS_TOKEN not set"
+        print(f"[LINE notification] {esc['line_notification']}")
+    elif not line_user_id:
+        esc["line_notification"] = "failed: LINE_USER_ID not set"
+        print(f"[LINE notification] {esc['line_notification']}")
+    else:
+        try:
             message = f"🚨 エスカレーション発生\nレベル: {req.level}\nエージェント: {req.from_agent}\n内容: {req.context}\nID: {eid}"
             headers = {
                 "Content-Type": "application/json",
@@ -190,10 +197,24 @@ async def create_escalation(req: EscalationRequest):
                     }
                 ]
             }
-            requests.post("https://api.line.me/v2/bot/message/push", json=payload, headers=headers, timeout=5)
-    except Exception as e:
-        # LINE 通知エラーはログに出力するが、エスカレーション作成は続行
-        print(f"[LINE notification error] {e}")
+            response = requests.post("https://api.line.me/v2/bot/message/push",
+                                    json=payload, headers=headers, timeout=5)
+            if response.status_code == 200:
+                esc["line_notification"] = "success"
+                print(f"[LINE notification] success (status={response.status_code})")
+            else:
+                error_detail = response.text if response.text else f"HTTP {response.status_code}"
+                esc["line_notification"] = f"failed: {error_detail}"
+                print(f"[LINE notification] failed - status={response.status_code}, body={error_detail}")
+        except requests.Timeout:
+            esc["line_notification"] = "failed: request timeout (5s)"
+            print(f"[LINE notification] {esc['line_notification']}")
+        except requests.RequestException as e:
+            esc["line_notification"] = f"failed: {type(e).__name__}: {str(e)}"
+            print(f"[LINE notification] {esc['line_notification']}")
+        except Exception as e:
+            esc["line_notification"] = f"failed: {type(e).__name__}: {str(e)}"
+            print(f"[LINE notification] {esc['line_notification']}")
 
     return esc
 
