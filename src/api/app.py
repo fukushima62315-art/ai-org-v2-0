@@ -5,6 +5,7 @@ GET / はHTMLウェルカムページを返す
 
 from __future__ import annotations
 import os, uuid, datetime, math
+import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -169,6 +170,31 @@ async def create_escalation(req: EscalationRequest):
            "level": req.level, "status": "pending",
            "created_at": datetime.datetime.utcnow().isoformat() + "Z"}
     _escalations[eid] = esc
+
+    # LINE 通知を送信（失敗してもエスカレーション作成は成功させる）
+    try:
+        line_token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
+        line_user_id = os.environ.get("LINE_USER_ID", "")
+        if line_token and line_user_id:
+            message = f"🚨 エスカレーション発生\nレベル: {req.level}\nエージェント: {req.from_agent}\n内容: {req.context}\nID: {eid}"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {line_token}"
+            }
+            payload = {
+                "to": line_user_id,
+                "messages": [
+                    {
+                        "type": "text",
+                        "text": message
+                    }
+                ]
+            }
+            requests.post("https://api.line.me/v2/bot/message/push", json=payload, headers=headers, timeout=5)
+    except Exception as e:
+        # LINE 通知エラーはログに出力するが、エスカレーション作成は続行
+        print(f"[LINE notification error] {e}")
+
     return esc
 
 @app.get("/escalations")
