@@ -22,16 +22,16 @@ jobs:
         run: pip install -r config/requirements.txt
 
       - name: Run Phase 1 tests
-        run: python -X utf8 run_phase1_tests.py
+        run: python -X utf8 tests/phase1/run_phase1_tests.py
 
       - name: Run Phase 2 tests
-        run: python -X utf8 run_phase2_tests.py
+        run: python -X utf8 tests/phase2/run_phase2_tests.py
 
       - name: Run Phase 3 tests
-        run: python -X utf8 run_phase3_tests.py
+        run: python -X utf8 tests/phase3/run_phase3_tests.py
 
       - name: Run Phase 5 tests (FastAPI)
-        run: python -X utf8 run_phase5_tests.py
+        run: python -X utf8 tests/phase5/run_phase5_tests.py
 
       - name: Upload test results
         if: always()
