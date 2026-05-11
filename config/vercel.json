@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/src/api/app.py" }
+  ],
+  "env": {
+    "ANTHROPIC_API_KEY":         "@anthropic-api-key",
+    "FIREBASE_DB_URL":           "@firebase-db-url",
+    "FIREBASE_AUTH_TOKEN":       "@firebase-auth-token",
+    "LINE_CHANNEL_ACCESS_TOKEN": "@line-channel-token",
+    "LINE_USER_ID":              "@line-user-id"
+  }
+}

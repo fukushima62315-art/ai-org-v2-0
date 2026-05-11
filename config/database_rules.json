@@ -1,0 +1,10 @@
+{
+  "rules": {
+    ".read":  "auth != null",
+    ".write": "auth != null",
+    "decisions":    { ".indexOn": ["timestamp", "agent"] },
+    "escalations":  { ".indexOn": ["status", "level"] },
+    "audit_trail":  { ".indexOn": ["timestamp"] },
+    "incidents":    { ".indexOn": ["severity", "timestamp"] }
+  }
+}

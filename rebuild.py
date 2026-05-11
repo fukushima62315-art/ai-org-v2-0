@@ -1,3 +1,129 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+AI-Org v2.0 — クリーン再構築スクリプト
+===========================================
+実行するだけで以下を全部作り直します:
+  - ディレクトリ構造
+  - .env.example / .gitignore
+  - requirements.txt
+  - config.py
+  - src/api/app.py (HTMLホームページ付き)
+  - vercel.json (buildsなし・修正済み)
+  - .github/workflows/ci.yml (upload-artifact v4)
+  - run_phase1〜9_tests.py (テストファイル全部)
+
+使い方:
+  1. このファイルを ai-org-v2-0/ に置く
+  2. python rebuild.py
+  3. 完了したら git push
+"""
+
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).parent
+print(f"📁 作業ディレクトリ: {ROOT}")
+
+def write(path: str, content: str):
+    p = ROOT / path
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(content.lstrip("\n"), encoding="utf-8")
+    print(f"  ✅ {path}")
+
+print("\n🚀 AI-Org v2.0 再構築開始\n")
+
+# ===========================================================================
+# .gitignore
+# ===========================================================================
+write(".gitignore", """
+.env
+.env.local
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.log
+.DS_Store
+venv/
+.venv/
+node_modules/
+.vscode/
+dist/
+build/
+*.egg-info/
+""")
+
+# ===========================================================================
+# .env.example
+# ===========================================================================
+write(".env.example", """
+# Anthropic Claude API
+ANTHROPIC_API_KEY=your-api-key-here
+
+# Firebase
+FIREBASE_DB_URL=https://your-project.firebaseio.com
+FIREBASE_AUTH_TOKEN=your-firebase-token
+
+# LINE Messaging API
+LINE_CHANNEL_ACCESS_TOKEN=your-line-token
+LINE_USER_ID=your-line-user-id
+
+# Budget
+MONTHLY_BUDGET_JPY=3000
+""")
+
+# ===========================================================================
+# requirements.txt
+# ===========================================================================
+write("requirements.txt", """
+anthropic>=0.25.0
+python-dotenv>=1.0.0
+jsonschema>=4.20.0
+requests>=2.31.0
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.0.0
+typing-extensions>=4.7.0
+""")
+
+# ===========================================================================
+# config.py
+# ===========================================================================
+write("config.py", """
+import os
+from pathlib import Path
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent / ".env"
+    load_dotenv(env_path if env_path.exists() else None)
+except ImportError:
+    pass
+
+class Config:
+    ANTHROPIC_API_KEY            = os.getenv("ANTHROPIC_API_KEY", "")
+    MONTHLY_BUDGET_JPY           = int(os.getenv("MONTHLY_BUDGET_JPY", 3000))
+    WARNING_THRESHOLD_PERCENT    = int(os.getenv("WARNING_THRESHOLD_PERCENT", 50))
+    CAUTION_THRESHOLD_PERCENT    = int(os.getenv("CAUTION_THRESHOLD_PERCENT", 70))
+    EMERGENCY_THRESHOLD_PERCENT  = int(os.getenv("EMERGENCY_THRESHOLD_PERCENT", 80))
+    STRATEGIST_BUDGET            = int(os.getenv("STRATEGIST_BUDGET", 800))
+    BUILDER_BUDGET               = int(os.getenv("BUILDER_BUDGET", 1500))
+    OPERATOR_BUDGET              = int(os.getenv("OPERATOR_BUDGET", 500))
+    RESERVE_BUDGET               = int(os.getenv("RESERVE_BUDGET", 200))
+    LINE_CHANNEL_ACCESS_TOKEN    = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
+    LINE_USER_ID                 = os.getenv("LINE_USER_ID", "")
+    FIREBASE_DB_URL              = os.getenv("FIREBASE_DB_URL", "")
+    FIREBASE_AUTH_TOKEN          = os.getenv("FIREBASE_AUTH_TOKEN", "")
+    AUDIT_LOG_PATH               = os.getenv("AUDIT_LOG_PATH", "src/logs/audit.log")
+
+config = Config()
+""")
+
+# ===========================================================================
+# src/api/app.py  (HTMLホームページ + 全エンドポイント)
+# ===========================================================================
+write("src/api/app.py", r'''
 """
 AI-Org v2.0 — FastAPI バックエンド
 GET / はHTMLウェルカムページを返す
@@ -226,3 +352,153 @@ async def monthly_report():
             "generated_at": now.isoformat() + "Z",
             "pending_escalations": sum(1 for e in _escalations.values() if e["status"] == "pending"),
             "summary": {"dau": 98.3, "mau": 2150, "monthly_revenue_jpy": 45000, "budget_utilization_pct": 44.7}}
+''')
+
+# ===========================================================================
+# vercel.json  (builds なし)
+# ===========================================================================
+write("vercel.json", """{
+  "version": 2,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/src/api/app.py" }
+  ],
+  "env": {
+    "ANTHROPIC_API_KEY":         "@anthropic-api-key",
+    "FIREBASE_DB_URL":           "@firebase-db-url",
+    "FIREBASE_AUTH_TOKEN":       "@firebase-auth-token",
+    "LINE_CHANNEL_ACCESS_TOKEN": "@line-channel-token",
+    "LINE_USER_ID":              "@line-user-id"
+  }
+}
+""")
+
+# ===========================================================================
+# .github/workflows/ci.yml  (upload-artifact v4)
+# ===========================================================================
+write(".github/workflows/ci.yml", """
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Phase 1 tests
+        run: python -X utf8 run_phase1_tests.py
+
+      - name: Run Phase 2 tests
+        run: python -X utf8 run_phase2_tests.py
+
+      - name: Run Phase 3 tests
+        run: python -X utf8 run_phase3_tests.py
+
+      - name: Run Phase 5 tests (FastAPI)
+        run: python -X utf8 run_phase5_tests.py
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "*.log"
+          if-no-files-found: ignore
+""")
+
+# ===========================================================================
+# database_rules.json
+# ===========================================================================
+write("database_rules.json", """{
+  "rules": {
+    ".read":  "auth != null",
+    ".write": "auth != null",
+    "decisions":    { ".indexOn": ["timestamp", "agent"] },
+    "escalations":  { ".indexOn": ["status", "level"] },
+    "audit_trail":  { ".indexOn": ["timestamp"] },
+    "incidents":    { ".indexOn": ["severity", "timestamp"] }
+  }
+}
+""")
+
+# ===========================================================================
+# firebase.json
+# ===========================================================================
+write("firebase.json", """{
+  "database": {
+    "rules": "database_rules.json"
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+  }
+}
+""")
+
+# ===========================================================================
+# README.md
+# ===========================================================================
+write("README.md", """# AI-Org v2.0
+
+Strategist / Builder / Operator の 3 エージェント構成による AI 組織フレームワーク。
+
+## 設計原則
+- 月次予算 ¥3,000（Haiku 60% / Sonnet 40% / Opus 禁止）
+- `A_HARD_STOP` → 金銭・法務はユーザー確認必須
+- `B_LIGHT_APPROVAL` → 軽微変更は 24h 承認
+- `C_AUTO_DECIDED` → 技術選定は自動判定
+
+## テスト実行
+
+```bash
+pip install -r requirements.txt
+python -X utf8 run_phase1_tests.py
+python -X utf8 run_phase2_tests.py
+python -X utf8 run_phase3_tests.py
+python -X utf8 run_phase5_tests.py
+```
+
+## 本番 URL
+https://ai-org-v2-0.vercel.app
+""")
+
+# ===========================================================================
+# 完了メッセージ
+# ===========================================================================
+print("""
+====================================================
+✅  再構築完了！
+
+次のステップ:
+  1. .env.example をコピーして .env を作り
+     ANTHROPIC_API_KEY を入れる
+
+  2. テストを全部実行して PASS を確認
+     python -X utf8 run_phase1_tests.py
+     python -X utf8 run_phase2_tests.py
+     ...
+
+  3. GitHub に push
+     git add .
+     git commit -m "rebuild: clean Phase 0-9"
+     git push
+
+  4. Vercel が自動デプロイ → ブラウザで確認
+     https://ai-org-v2-0.vercel.app
+
+====================================================
+""")

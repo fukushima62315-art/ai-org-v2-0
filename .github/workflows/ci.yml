@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Phase 1 tests
+        run: python -X utf8 run_phase1_tests.py
+
+      - name: Run Phase 2 tests
+        run: python -X utf8 run_phase2_tests.py
+
+      - name: Run Phase 3 tests
+        run: python -X utf8 run_phase3_tests.py
+
+      - name: Run Phase 5 tests (FastAPI)
+        run: python -X utf8 run_phase5_tests.py
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "*.log"
+          if-no-files-found: ignore
