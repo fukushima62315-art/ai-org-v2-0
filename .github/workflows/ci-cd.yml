@@ -26,6 +26,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r config/requirements.txt
 
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
+
     - name: Run Phase 0 Tests
       run: python -X utf8 tests/phase1/run_phase1_tests.py
 
